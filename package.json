@@ -1,0 +1,18 @@
+{
+  "name": "linkedin-lib",
+  "version": "1.0.0",
+  "description": "LinkedIn Auth & Posting SDK",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest --coverage --forceExit",
+    "test:watch": "jest --watch"
+  },
+  "keywords": ["linkedin", "auth", "api", "sdk"],
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

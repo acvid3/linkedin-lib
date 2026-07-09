@@ -1,6 +1,6 @@
 # linkedin-lib
 
-LinkedIn Auth & Posting SDK. OAuth2, feed posts, image upload.
+LinkedIn Auth & Posting SDK. OAuth2, feed posts, image upload. Supports both personal profiles and company pages.
 
 ## Install
 
@@ -37,28 +37,37 @@ const url = getAuthorizationUrl('http://localhost:3456/callback');
 // Open in browser → user authorizes → LinkedIn redirects back with ?code=
 ```
 
+For company page posting, request the `w_organization_social` scope:
+
+```js
+const url = getAuthorizationUrl('http://localhost:3456/callback', 'openid profile email w_organization_social');
+```
+
 ### 2. Exchange code for token
 
 ```js
 const token = await getAccessToken(code, 'http://localhost:3456/callback');
-// token.access_token  — use for API calls
-// token.refresh_token — optional, for token refresh
 ```
 
 ### 3. Get user profile
 
 ```js
 const user = await getUserInfo(token.access_token);
-// user.sub → person ID for URN
 const authorUrn = `urn:li:person:${user.sub}`;
 ```
 
 ### 4. Create a text post
 
+**On personal profile:**
+
 ```js
-const post = await createPost(token.access_token, authorUrn, 'Hello LinkedIn!');
-// post.id  → "7481035440674725889"
-// post.urn → "urn:li:ugcPost:7481035440674725889"
+const post = await createPost(token.access_token, 'urn:li:person:12345', 'Hello LinkedIn!');
+```
+
+**On company page:**
+
+```js
+const post = await createPost(token.access_token, 'urn:li:organization:67890', 'Hello from our company!');
 ```
 
 ### 5. Create a post with an image
@@ -87,6 +96,8 @@ await deletePost(token.access_token, post.id);
 | `uploadImage(accessToken, authorUrn, buffer, mimeType)` | Upload an image, return asset URN |
 | `createPostWithImage(accessToken, authorUrn, commentary, buffer, mimeType)` | Upload image and create a post |
 | `deletePost(accessToken, postIdOrUrn)` | Delete a post by ID or share URN |
+
+The `authorUrn` parameter can be either a person (`urn:li:person:{id}`) or an organization (`urn:li:organization:{id}`). Company page posting requires the `w_organization_social` scope and the appropriate company page role (ADMINISTRATOR, CONTENT_ADMIN, or DIRECT_SPONSORED_CONTENT_POSTER).
 
 ## Tests
 

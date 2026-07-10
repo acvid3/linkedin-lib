@@ -24,8 +24,7 @@ function getUserInfo(accessToken) {
 /**
  * Create a post on LinkedIn feed.
  * @param {object} options - Optional parameters.
- * @param {object} options.image - Single image. Format: { buffer: Buffer, mimeType: string }.
- * @param {object[]} options.images - Multiple images (carousel). Format: [{ buffer, mimeType }].
+ * @param {object} options.image - Attach an image. Format: { buffer: Buffer, mimeType: string }.
  * @param {object} options.article - Attach an article link. Format: { url: string, title: string }.
  */
 function createPost(accessToken, authorUrn, commentary, options) {

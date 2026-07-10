@@ -74,13 +74,11 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
     });
   }
 
-  const imgs = images || (image ? [image] : []);
-  if (imgs.length > 0) {
-    shareMediaCategory = imgs.length > 1 ? 'MULTI_IMAGE' : 'IMAGE';
-    for (const img of imgs) {
-      const asset = await _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png');
-      media.push({ status: 'READY', media: asset });
-    }
+  const img = image || (images && images[0]);
+  if (img) {
+    const asset = await _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png');
+    shareMediaCategory = 'IMAGE';
+    media.push({ status: 'READY', media: asset });
   }
 
   const body = {

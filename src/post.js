@@ -1,6 +1,7 @@
 const API_BASE = 'https://api.linkedin.com';
 const POSTS_URL = `${API_BASE}/rest/posts`;
 const REGISTER_IMAGE_URL = `${API_BASE}/rest/images?action=initializeUpload`;
+const REGISTER_VIDEO_URL = `${API_BASE}/rest/videos?action=initializeUpload`;
 
 function _headers(accessToken) {
   return {
@@ -43,6 +44,34 @@ async function _uploadImage(accessToken, authorUrn, imageBuffer, mimeType) {
   return image;
 }
 
+async function _uploadVideo(accessToken, authorUrn, videoBuffer, mimeType) {
+  const { data: initData } = await _request(REGISTER_VIDEO_URL, {
+    method: 'POST',
+    headers: _headers(accessToken),
+    body: JSON.stringify({
+      initializeUploadRequest: {
+        owner: authorUrn,
+        fileSizeBytes: videoBuffer.length,
+      },
+    }),
+  });
+
+  const { uploadInstructions, video } = initData.value;
+  const uploadUrl = uploadInstructions[0].uploadUrl;
+
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': mimeType },
+    body: videoBuffer,
+  });
+
+  if (!uploadRes.ok) {
+    throw Object.assign(new Error(`Video upload failed with status code ${uploadRes.status}`), { response: { status: uploadRes.status } });
+  }
+
+  return video;
+}
+
 async function createPost(accessToken, authorUrn, commentary, options = {}) {
   const {
     visibility = 'PUBLIC',
@@ -51,6 +80,7 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
     article,
     image,
     images,
+    video,
   } = options;
 
   const body = {
@@ -72,7 +102,12 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
     };
   }
 
-  if (images && images.length > 1) {
+  if (video) {
+    const asset = await _uploadVideo(accessToken, authorUrn, video.buffer, video.mimeType || 'video/mp4');
+    body.content = {
+      media: { id: asset },
+    };
+  } else if (images && images.length > 1) {
     const assets = [];
     for (const img of images) {
       const asset = await _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png');

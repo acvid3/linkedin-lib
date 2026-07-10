@@ -32,9 +32,19 @@ function createPost(accessToken, authorUrn, commentary, options) {
   return post.createPost(accessToken, authorUrn, commentary, options);
 }
 
-/** Delete a post by numeric ID or full share URN. Only works for API-created posts. */
+/** Delete a post by numeric ID or full share URN. */
 function deletePost(accessToken, postIdOrUrn) {
   return post.deletePost(accessToken, postIdOrUrn);
+}
+
+/** React to a post (LIKE, PRAISE, EMPATHY, INTEREST, APPRECIATION, ENTERTAINMENT). */
+function reactToPost(accessToken, postUrn, reactionType) {
+  return post.reactToPost(accessToken, postUrn, reactionType);
+}
+
+/** Remove your reaction from a post. */
+function unlikePost(accessToken, postUrn) {
+  return post.unlikePost(accessToken, postUrn);
 }
 
 module.exports = {
@@ -44,4 +54,6 @@ module.exports = {
   getUserInfo,
   createPost,
   deletePost,
+  reactToPost,
+  unlikePost,
 };

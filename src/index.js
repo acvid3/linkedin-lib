@@ -21,19 +21,14 @@ function getUserInfo(accessToken) {
   return auth.getUserInfo(accessToken);
 }
 
-/** Create a text post (or article post) on the member's LinkedIn feed. */
+/**
+ * Create a post on LinkedIn feed.
+ * @param {object} options - Optional parameters.
+ * @param {object} options.image - Attach an image. Format: { buffer: Buffer, mimeType: string }.
+ * @param {object} options.article - Attach an article link. Format: { url: string, title: string }.
+ */
 function createPost(accessToken, authorUrn, commentary, options) {
   return post.createPost(accessToken, authorUrn, commentary, options);
-}
-
-/** Register an image upload and upload binary data. Returns asset URN. */
-function uploadImage(accessToken, authorUrn, imageBuffer, mimeType) {
-  return post.uploadImage(accessToken, authorUrn, imageBuffer, mimeType);
-}
-
-/** Upload an image then create a post with it on the member's feed. */
-function createPostWithImage(accessToken, authorUrn, commentary, imageBuffer, mimeType, options) {
-  return post.createPostWithImage(accessToken, authorUrn, commentary, imageBuffer, mimeType, options);
 }
 
 /** Delete a post by numeric ID or full share URN. Only works for API-created posts. */
@@ -47,7 +42,5 @@ module.exports = {
   refreshAccessToken,
   getUserInfo,
   createPost,
-  uploadImage,
-  createPostWithImage,
   deletePost,
 };

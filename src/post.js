@@ -18,52 +18,7 @@ async function _request(url, options) {
   return { data, headers: res.headers };
 }
 
-async function createPost(accessToken, authorUrn, commentary, options = {}) {
-  const {
-    visibility = 'PUBLIC',
-    lifecycleState = 'PUBLISHED',
-    article,
-  } = options;
-
-  const body = {
-    author: authorUrn,
-    lifecycleState,
-    specificContent: {
-      'com.linkedin.ugc.ShareContent': {
-        shareCommentary: { text: commentary },
-        shareMediaCategory: article ? 'ARTICLE' : 'NONE',
-      },
-    },
-    visibility: {
-      'com.linkedin.ugc.MemberNetworkVisibility': visibility,
-    },
-  };
-
-  if (article) {
-    body.specificContent['com.linkedin.ugc.ShareContent'].media = [
-      {
-        status: 'READY',
-        originalUrl: article.url,
-        title: article.title,
-      },
-    ];
-  }
-
-  const { data, headers } = await _request(UGC_POSTS_URL, {
-    method: 'POST',
-    headers: {
-      ..._headers(accessToken),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-
-  const rawId = headers.get('x-restli-id') || data?.id || '';
-  const id = rawId.replace(/^urn:li:share:/, '');
-  return { id, urn: `urn:li:ugcPost:${id}` };
-}
-
-async function uploadImage(accessToken, authorUrn, imageBuffer, mimeType = 'image/png') {
+async function _uploadImage(accessToken, authorUrn, imageBuffer, mimeType) {
   const { data: uploadData } = await _request(REGISTER_UPLOAD_URL, {
     method: 'POST',
     headers: _headers(accessToken),
@@ -98,30 +53,49 @@ async function uploadImage(accessToken, authorUrn, imageBuffer, mimeType = 'imag
   return asset;
 }
 
-async function createPostWithImage(accessToken, authorUrn, commentary, imageBuffer, mimeType, options = {}) {
-  const asset = await uploadImage(accessToken, authorUrn, imageBuffer, mimeType);
+async function createPost(accessToken, authorUrn, commentary, options = {}) {
+  const {
+    visibility = 'PUBLIC',
+    lifecycleState = 'PUBLISHED',
+    article,
+    image,
+  } = options;
 
-  const visibility = options.visibility || 'PUBLIC';
+  let shareMediaCategory = 'NONE';
+  const media = [];
+
+  if (article) {
+    shareMediaCategory = 'ARTICLE';
+    media.push({
+      status: 'READY',
+      originalUrl: article.url,
+      title: article.title,
+    });
+  }
+
+  if (image) {
+    const asset = await _uploadImage(accessToken, authorUrn, image.buffer, image.mimeType || 'image/png');
+    shareMediaCategory = 'IMAGE';
+    media.push({ status: 'READY', media: asset });
+  }
 
   const body = {
     author: authorUrn,
-    lifecycleState: 'PUBLISHED',
+    lifecycleState,
     specificContent: {
       'com.linkedin.ugc.ShareContent': {
         shareCommentary: { text: commentary },
-        shareMediaCategory: 'IMAGE',
-        media: [
-          {
-            status: 'READY',
-            media: asset,
-          },
-        ],
+        shareMediaCategory,
       },
     },
     visibility: {
       'com.linkedin.ugc.MemberNetworkVisibility': visibility,
     },
   };
+
+  if (media.length > 0) {
+    body.specificContent['com.linkedin.ugc.ShareContent'].media = media;
+  }
 
   const { data, headers } = await _request(UGC_POSTS_URL, {
     method: 'POST',
@@ -158,7 +132,5 @@ async function deletePost(accessToken, postIdOrUrn) {
 
 module.exports = {
   createPost,
-  uploadImage,
-  createPostWithImage,
   deletePost,
 };

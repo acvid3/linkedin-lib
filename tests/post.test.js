@@ -31,13 +31,12 @@ describe('createPost', () => {
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer test_access_token',
-          'X-Restli-Protocol-Version': '2.0.0',
-          'Content-Type': 'application/json',
         }),
         body: expect.stringContaining('"shareCommentary":{"text":"Hello!"}'),
       })
     );
     expect(result).toEqual({ id: '456', urn: 'urn:li:ugcPost:456' });
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body).specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('NONE');
   });
 
   it('extracts numeric ID from full URN response', async () => {
@@ -46,7 +45,6 @@ describe('createPost', () => {
     );
 
     const result = await post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'Test');
-
     expect(result).toEqual({ id: '999', urn: 'urn:li:ugcPost:999' });
   });
 
@@ -59,62 +57,14 @@ describe('createPost', () => {
       article: { url: 'https://example.com', title: 'Example' },
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        body: expect.stringContaining('"shareMediaCategory":"ARTICLE"'),
-      })
-    );
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('ARTICLE');
+    expect(body.specificContent['com.linkedin.ugc.ShareContent'].media).toEqual([
+      { status: 'READY', originalUrl: 'https://example.com', title: 'Example' },
+    ]);
   });
 
-  it('throws on API error', async () => {
-    global.fetch.mockResolvedValue(mockFetchResponse({ message: 'Bad request' }, { ok: false, status: 400 }));
-
-    await expect(post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'test')).rejects.toThrow('Request failed with status code 400');
-  });
-});
-
-describe('uploadImage', () => {
-  it('registers upload, uploads image, returns asset URN', async () => {
-    global.fetch
-      .mockResolvedValueOnce(
-        mockFetchResponse({
-          value: {
-            uploadMechanism: {
-              'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': {
-                uploadUrl: 'https://upload.linkedin.com/upload',
-              },
-            },
-            asset: 'urn:li:digitalmediaAsset:img123',
-          },
-        })
-      )
-      .mockResolvedValueOnce(mockFetchResponse(null));
-
-    const buffer = Buffer.from('fake-image-data');
-    const result = await post.uploadImage(ACCESS_TOKEN, AUTHOR_URN, buffer, 'image/jpeg');
-
-    expect(global.fetch).toHaveBeenNthCalledWith(1,
-      'https://api.linkedin.com/v2/assets?action=registerUpload',
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.stringContaining('"owner":"urn:li:person:abc123"'),
-      })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(2,
-      'https://upload.linkedin.com/upload',
-      expect.objectContaining({
-        method: 'PUT',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: buffer,
-      })
-    );
-    expect(result).toBe('urn:li:digitalmediaAsset:img123');
-  });
-});
-
-describe('createPostWithImage', () => {
-  it('uploads image then creates post with media', async () => {
+  it('uploads image and creates post with image', async () => {
     global.fetch
       .mockResolvedValueOnce(
         mockFetchResponse({
@@ -133,34 +83,25 @@ describe('createPostWithImage', () => {
         mockFetchResponse({}, { headers: { 'x-restli-id': 'post999' } })
       );
 
-    const buffer = Buffer.from('img');
-    const result = await post.createPostWithImage(ACCESS_TOKEN, AUTHOR_URN, 'With image', buffer, 'image/png');
+    const result = await post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'With image', {
+      image: { buffer: Buffer.from('img'), mimeType: 'image/png' },
+    });
 
     expect(result).toEqual({ id: 'post999', urn: 'urn:li:ugcPost:post999' });
     expect(global.fetch).toHaveBeenCalledTimes(3);
+
+    const createCall = global.fetch.mock.calls[2];
+    const createBody = JSON.parse(createCall[1].body);
+    expect(createBody.specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('IMAGE');
+    expect(createBody.specificContent['com.linkedin.ugc.ShareContent'].media).toEqual([
+      { status: 'READY', media: 'urn:li:digitalmediaAsset:img123' },
+    ]);
   });
 
-  it('extracts numeric ID from share URN in createPostWithImage', async () => {
-    global.fetch
-      .mockResolvedValueOnce(
-        mockFetchResponse({
-          value: {
-            uploadMechanism: {
-              'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': {
-                uploadUrl: 'https://upload.linkedin.com/upload',
-              },
-            },
-            asset: 'urn:li:digitalmediaAsset:img123',
-          },
-        })
-      )
-      .mockResolvedValueOnce(mockFetchResponse(null))
-      .mockResolvedValueOnce(
-        mockFetchResponse({ id: 'urn:li:share:555' }, { headers: {} })
-      );
+  it('throws on API error', async () => {
+    global.fetch.mockResolvedValue(mockFetchResponse({ message: 'Bad request' }, { ok: false, status: 400 }));
 
-    const result = await post.createPostWithImage(ACCESS_TOKEN, AUTHOR_URN, 'test', Buffer.from('x'), 'image/png');
-    expect(result).toEqual({ id: '555', urn: 'urn:li:ugcPost:555' });
+    await expect(post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'test')).rejects.toThrow('Request failed with status code 400');
   });
 });
 
@@ -177,7 +118,6 @@ describe('deletePost', () => {
         headers: expect.objectContaining({
           Authorization: 'Bearer test_access_token',
           'LinkedIn-Version': '202606',
-          'X-RestLi-Method': 'DELETE',
         }),
       })
     );

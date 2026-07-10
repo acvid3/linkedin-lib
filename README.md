@@ -75,7 +75,9 @@ const post = await createPost(token.access_token, 'urn:li:organization:67890', '
 ```js
 const fs = require('fs');
 const buffer = fs.readFileSync('./photo.png');
-const post = await createPostWithImage(token.access_token, authorUrn, 'My photo', buffer, 'image/png');
+const post = await createPost(token.access_token, authorUrn, 'My photo', {
+  image: { buffer, mimeType: 'image/png' }
+});
 ```
 
 ### 6. Delete a post
@@ -92,9 +94,7 @@ await deletePost(token.access_token, post.id);
 | `getAccessToken(code, redirectUri)` | Exchange auth code for access token |
 | `refreshAccessToken(refreshToken)` | Refresh an expired access token |
 | `getUserInfo(accessToken)` | Get authenticated user's profile |
-| `createPost(accessToken, authorUrn, commentary, options?)` | Create a text or article post |
-| `uploadImage(accessToken, authorUrn, buffer, mimeType)` | Upload an image, return asset URN |
-| `createPostWithImage(accessToken, authorUrn, commentary, buffer, mimeType)` | Upload image and create a post |
+| `createPost(accessToken, authorUrn, commentary, options?)` | Create a post (text, image, or article). Image: `{ image: { buffer, mimeType } }` |
 | `deletePost(accessToken, postIdOrUrn)` | Delete a post by ID or share URN |
 
 The `authorUrn` parameter can be either a person (`urn:li:person:{id}`) or an organization (`urn:li:organization:{id}`). Company page posting requires the `w_organization_social` scope and the appropriate company page role (ADMINISTRATOR, CONTENT_ADMIN, or DIRECT_SPONSORED_CONTENT_POSTER).

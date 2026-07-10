@@ -18,7 +18,7 @@ const ACCESS_TOKEN = 'test_access_token';
 const AUTHOR_URN = 'urn:li:person:abc123';
 
 describe('createPost', () => {
-  it('creates a text post and returns id and urn', async () => {
+  it('creates a text post', async () => {
     global.fetch.mockResolvedValue(
       mockFetchResponse({}, { headers: { 'x-restli-id': '456' } })
     );
@@ -26,17 +26,24 @@ describe('createPost', () => {
     const result = await post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'Hello!');
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.linkedin.com/v2/ugcPosts',
+      'https://api.linkedin.com/rest/posts',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer test_access_token',
+          'LinkedIn-Version': '202606',
         }),
-        body: expect.stringContaining('"shareCommentary":{"text":"Hello!"}'),
+        body: expect.stringContaining('"commentary":"Hello!"'),
       })
     );
-    expect(result).toEqual({ id: '456', urn: 'urn:li:ugcPost:456' });
-    expect(JSON.parse(global.fetch.mock.calls[0][1].body).specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('NONE');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.author).toBe(AUTHOR_URN);
+    expect(body.commentary).toBe('Hello!');
+    expect(body.visibility).toBe('PUBLIC');
+    expect(body.lifecycleState).toBe('PUBLISHED');
+    expect(body.content).toBeUndefined();
+
+    expect(result).toEqual({ id: '456', urn: 'urn:li:share:456' });
   });
 
   it('extracts numeric ID from full URN response', async () => {
@@ -45,10 +52,10 @@ describe('createPost', () => {
     );
 
     const result = await post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'Test');
-    expect(result).toEqual({ id: '999', urn: 'urn:li:ugcPost:999' });
+    expect(result).toEqual({ id: '999', urn: 'urn:li:share:999' });
   });
 
-  it('includes article content when provided', async () => {
+  it('includes article content', async () => {
     global.fetch.mockResolvedValue(
       mockFetchResponse({}, { headers: { 'x-restli-id': '789' } })
     );
@@ -58,23 +65,16 @@ describe('createPost', () => {
     });
 
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(body.specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('ARTICLE');
-    expect(body.specificContent['com.linkedin.ugc.ShareContent'].media).toEqual([
-      { status: 'READY', originalUrl: 'https://example.com', title: 'Example' },
-    ]);
+    expect(body.content).toEqual({ article: { source: 'https://example.com', title: 'Example' } });
   });
 
-  it('uploads image and creates post with image', async () => {
+  it('uploads image and creates post with media', async () => {
     global.fetch
       .mockResolvedValueOnce(
         mockFetchResponse({
           value: {
-            uploadMechanism: {
-              'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': {
-                uploadUrl: 'https://upload.linkedin.com/upload',
-              },
-            },
-            asset: 'urn:li:digitalmediaAsset:img123',
+            uploadUrl: 'https://upload.linkedin.com/upload',
+            image: 'urn:li:image:img123',
           },
         })
       )
@@ -87,15 +87,11 @@ describe('createPost', () => {
       image: { buffer: Buffer.from('img'), mimeType: 'image/png' },
     });
 
-    expect(result).toEqual({ id: 'post999', urn: 'urn:li:ugcPost:post999' });
+    expect(result).toEqual({ id: 'post999', urn: 'urn:li:share:post999' });
     expect(global.fetch).toHaveBeenCalledTimes(3);
 
-    const createCall = global.fetch.mock.calls[2];
-    const createBody = JSON.parse(createCall[1].body);
-    expect(createBody.specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('IMAGE');
-    expect(createBody.specificContent['com.linkedin.ugc.ShareContent'].media).toEqual([
-      { status: 'READY', media: 'urn:li:digitalmediaAsset:img123' },
-    ]);
+    const createBody = JSON.parse(global.fetch.mock.calls[2][1].body);
+    expect(createBody.content).toEqual({ media: { id: 'urn:li:image:img123' } });
   });
 
   it('throws on API error', async () => {

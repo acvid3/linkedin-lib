@@ -22,10 +22,11 @@ function getUserInfo(accessToken) {
 }
 
 /**
- * Create a post on LinkedIn feed.
+ * Create a post on LinkedIn feed (Posts API).
  * @param {object} options - Optional parameters.
  * @param {object} options.image - Attach an image. Format: { buffer: Buffer, mimeType: string }.
  * @param {object} options.article - Attach an article link. Format: { url: string, title: string }.
+ * @returns {Promise<{id: string, urn: string}>} `{ id: '123', urn: 'urn:li:share:123' }`
  */
 function createPost(accessToken, authorUrn, commentary, options) {
   return post.createPost(accessToken, authorUrn, commentary, options);

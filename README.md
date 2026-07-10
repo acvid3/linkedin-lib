@@ -5,7 +5,7 @@ LinkedIn Auth & Posting SDK. OAuth2, feed posts, image upload. Supports both per
 ## Install
 
 ```bash
-npm install git+https://github.com/acvid3/linkedin-lib.git
+npm i linkedin-lib
 ```
 
 ## Setup

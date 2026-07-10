@@ -2,6 +2,7 @@ const API_BASE = 'https://api.linkedin.com';
 const POSTS_URL = `${API_BASE}/rest/posts`;
 const REGISTER_IMAGE_URL = `${API_BASE}/rest/images?action=initializeUpload`;
 const REGISTER_VIDEO_URL = `${API_BASE}/rest/videos?action=initializeUpload`;
+const FINALIZE_VIDEO_URL = `${API_BASE}/rest/videos?action=finalizeUpload`;
 
 function _headers(accessToken) {
   return {
@@ -67,6 +68,21 @@ async function _uploadVideo(accessToken, authorUrn, videoBuffer, mimeType) {
 
   if (!uploadRes.ok) {
     throw Object.assign(new Error(`Video upload failed with status code ${uploadRes.status}`), { response: { status: uploadRes.status } });
+  }
+
+  const etag = (uploadRes.headers.get('etag') || '').replace(/^"|"$/g, '');
+  if (etag) {
+    await _request(FINALIZE_VIDEO_URL, {
+      method: 'POST',
+      headers: _headers(accessToken),
+      body: JSON.stringify({
+        finalizeUploadRequest: {
+          video,
+          uploadedPartIds: [etag],
+          uploadToken: '',
+        },
+      }),
+    });
   }
 
   return video;

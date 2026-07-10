@@ -72,12 +72,23 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
     };
   }
 
-  const img = image || (images && images[0]);
-  if (img) {
-    const asset = await _uploadImage(accessToken, authorUrn, image.buffer, image.mimeType || 'image/png');
+  if (images && images.length > 1) {
+    const assets = await Promise.all(images.map((img) =>
+      _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png')
+    ));
     body.content = {
-      media: { id: asset },
+      multiImage: {
+        images: assets.map((id) => ({ id })),
+      },
     };
+  } else {
+    const img = image || (images && images[0]);
+    if (img) {
+      const asset = await _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png');
+      body.content = {
+        media: { id: asset },
+      };
+    }
   }
 
   const { data, headers } = await _request(POSTS_URL, {

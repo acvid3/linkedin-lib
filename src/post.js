@@ -77,7 +77,7 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
       _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png')
     ));
     body.content = {
-      media: { id: assets[0] },
+      multimedia: assets.map((id, i) => ({ id, title: `Image ${i + 1}` })),
     };
   } else if (image) {
     const asset = await _uploadImage(accessToken, authorUrn, image.buffer, image.mimeType || 'image/png');

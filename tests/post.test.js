@@ -98,6 +98,32 @@ describe('createPost', () => {
     ]);
   });
 
+  it('uploads multiple images and creates carousel post', async () => {
+    global.fetch
+      .mockResolvedValueOnce(mockFetchResponse({ value: { uploadMechanism: { 'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': { uploadUrl: 'https://upload.li/1' } }, asset: 'urn:li:digitalmediaAsset:a1' } }))
+      .mockResolvedValueOnce(mockFetchResponse(null))
+      .mockResolvedValueOnce(mockFetchResponse({ value: { uploadMechanism: { 'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': { uploadUrl: 'https://upload.li/2' } }, asset: 'urn:li:digitalmediaAsset:a2' } }))
+      .mockResolvedValueOnce(mockFetchResponse(null))
+      .mockResolvedValueOnce(mockFetchResponse({}, { headers: { 'x-restli-id': 'carousel' } }));
+
+    const imgs = [
+      { buffer: Buffer.from('img1'), mimeType: 'image/png' },
+      { buffer: Buffer.from('img2'), mimeType: 'image/jpeg' },
+    ];
+
+    const result = await post.createPost(ACCESS_TOKEN, AUTHOR_URN, 'Carousel', { images: imgs });
+
+    expect(result).toEqual({ id: 'carousel', urn: 'urn:li:ugcPost:carousel' });
+    expect(global.fetch).toHaveBeenCalledTimes(5);
+
+    const body = JSON.parse(global.fetch.mock.calls[4][1].body);
+    expect(body.specificContent['com.linkedin.ugc.ShareContent'].shareMediaCategory).toBe('MULTI_IMAGE');
+    expect(body.specificContent['com.linkedin.ugc.ShareContent'].media).toEqual([
+      { status: 'READY', media: 'urn:li:digitalmediaAsset:a1' },
+      { status: 'READY', media: 'urn:li:digitalmediaAsset:a2' },
+    ]);
+  });
+
   it('throws on API error', async () => {
     global.fetch.mockResolvedValue(mockFetchResponse({ message: 'Bad request' }, { ok: false, status: 400 }));
 

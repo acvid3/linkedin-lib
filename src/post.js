@@ -59,6 +59,7 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
     lifecycleState = 'PUBLISHED',
     article,
     image,
+    images,
   } = options;
 
   let shareMediaCategory = 'NONE';
@@ -73,10 +74,13 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
     });
   }
 
-  if (image) {
-    const asset = await _uploadImage(accessToken, authorUrn, image.buffer, image.mimeType || 'image/png');
-    shareMediaCategory = 'IMAGE';
-    media.push({ status: 'READY', media: asset });
+  const imgs = images || (image ? [image] : []);
+  if (imgs.length > 0) {
+    shareMediaCategory = imgs.length > 1 ? 'MULTI_IMAGE' : 'IMAGE';
+    for (const img of imgs) {
+      const asset = await _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png');
+      media.push({ status: 'READY', media: asset });
+    }
   }
 
   const body = {

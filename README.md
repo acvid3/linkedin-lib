@@ -69,13 +69,22 @@ const post = await createPost(token.access_token, 'urn:li:person:12345', 'Hello 
 const post = await createPost(token.access_token, 'urn:li:organization:67890', 'Hello from our company!');
 ```
 
-### 5. Create a post with an image
+### 5. Create a post with image(s)
 
 ```js
 const fs = require('fs');
-const buffer = fs.readFileSync('./photo.png');
+
+// Single image
 const post = await createPost(token.access_token, authorUrn, 'My photo', {
-  image: { buffer, mimeType: 'image/png' }
+  image: { buffer: fs.readFileSync('./photo.png'), mimeType: 'image/png' }
+});
+
+// Multiple images (carousel)
+const post = await createPost(token.access_token, authorUrn, 'Carousel', {
+  images: [
+    { buffer: fs.readFileSync('./img1.png'), mimeType: 'image/png' },
+    { buffer: fs.readFileSync('./img2.jpg'), mimeType: 'image/jpeg' },
+  ]
 });
 ```
 

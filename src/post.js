@@ -154,23 +154,32 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
   });
 
   const rawId = headers.get('x-restli-id') || data?.id || '';
+  const prefix = rawId.startsWith('urn:li:ugcPost:') ? 'ugcPost' : 'share';
   const id = rawId.replace(/^urn:li:(share|ugcPost):/, '');
-  return { id, urn: `urn:li:share:${id}` };
+  return { id, urn: `urn:li:${prefix}:${id}` };
 }
 
 async function deletePost(accessToken, postIdOrUrn) {
-  const shareUrn = postIdOrUrn.includes('urn:li:share:')
-    ? postIdOrUrn
-    : `urn:li:share:${postIdOrUrn}`;
+  const urls = postIdOrUrn.includes('urn:li:')
+    ? [postIdOrUrn]
+    : [`urn:li:share:${postIdOrUrn}`, `urn:li:ugcPost:${postIdOrUrn}`];
 
-  const url = `${API_BASE}/rest/posts/${encodeURIComponent(shareUrn)}`;
-
-  await _request(url, {
-    method: 'DELETE',
-    headers: _headers(accessToken),
-  });
-
-  return { deleted: true, urn: shareUrn };
+  let lastErr;
+  for (const urn of urls) {
+    try {
+      await _request(`${API_BASE}/rest/posts/${encodeURIComponent(urn)}`, {
+        method: 'DELETE',
+        headers: {
+          ..._headers(accessToken),
+          'X-RestLi-Method': 'DELETE',
+        },
+      });
+      return { deleted: true, urn };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 module.exports = {

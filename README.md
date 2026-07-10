@@ -1,6 +1,6 @@
 # linkedin-lib
 
-LinkedIn Auth & Posting SDK. OAuth2, feed posts, images (single & multi), articles. Uses LinkedIn Posts API (`/rest/posts`).
+LinkedIn Auth & Posting SDK. OAuth2, feed posts, images (single & multi), video, reactions. Uses LinkedIn Posts API (`/rest/posts`).
 
 ## Install
 
@@ -24,6 +24,8 @@ const {
   getUserInfo,
   createPost,
   deletePost,
+  reactToPost,
+  unlikePost,
 } = require('linkedin-lib');
 ```
 
@@ -81,10 +83,35 @@ await createPost(token.access_token, authorUrn, 'Gallery', {
 });
 ```
 
+### Create a post with video
+
+```js
+const fs = require('fs');
+await createPost(token.access_token, authorUrn, 'My video', {
+  video: { buffer: fs.readFileSync('./video.mp4'), mimeType: 'video/mp4' }
+});
+```
+
 ### Delete a post
 
 ```js
 await deletePost(token.access_token, post.id);
+```
+
+### React to a post
+
+```js
+await reactToPost(token.access_token, post.urn, 'LIKE');
+// Types: LIKE, PRAISE (Celebrate), EMPATHY (Love), INTEREST (Insightful),
+//        APPRECIATION (Support), ENTERTAINMENT (Funny)
+```
+
+Requires `w_member_social_feed` scope.
+
+### Remove reaction
+
+```js
+await unlikePost(token.access_token, post.urn);
 ```
 
 ## API
@@ -95,8 +122,10 @@ await deletePost(token.access_token, post.id);
 | `getAccessToken(code, redirectUri)` | Exchange auth code for access token |
 | `refreshAccessToken(refreshToken)` | Refresh an expired access token |
 | `getUserInfo(accessToken)` | Get authenticated user's profile |
-| `createPost(accessToken, authorUrn, commentary, options?)` | Create a post. Options: `image`, `images[]`, `article` |
+| `createPost(accessToken, authorUrn, commentary, options?)` | Create a post. Options: `image`, `images[]`, `video`, `article` |
 | `deletePost(accessToken, postIdOrUrn)` | Delete a post |
+| `reactToPost(accessToken, postUrn, reactionType?)` | React to a post (default: LIKE) |
+| `unlikePost(accessToken, postUrn)` | Remove your reaction |
 
 The `authorUrn` can be `urn:li:person:{id}` or `urn:li:organization:{id}`. Company posting requires `w_organization_social` scope and appropriate page role.
 

@@ -73,9 +73,11 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
   }
 
   if (images && images.length > 1) {
-    const assets = await Promise.all(images.map((img) =>
-      _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png')
-    ));
+    const assets = [];
+    for (const img of images) {
+      const asset = await _uploadImage(accessToken, authorUrn, img.buffer, img.mimeType || 'image/png');
+      assets.push(asset);
+    }
     body.content = {
       multiImage: {
         images: assets.map((id) => ({ id })),

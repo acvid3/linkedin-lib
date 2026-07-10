@@ -1,5 +1,6 @@
 const auth = require('./auth');
 const post = require('./post');
+const reactions = require('./reactions');
 
 /** Build LinkedIn OAuth authorization URL. Redirect user here. */
 function getAuthorizationUrl(redirectUri, scope = 'openid profile email w_member_social', state = '') {
@@ -39,12 +40,12 @@ function deletePost(accessToken, postIdOrUrn) {
 
 /** React to a post (LIKE, PRAISE, EMPATHY, INTEREST, APPRECIATION, ENTERTAINMENT). */
 function reactToPost(accessToken, postUrn, reactionType) {
-  return post.reactToPost(accessToken, postUrn, reactionType);
+  return reactions.reactToPost(accessToken, postUrn, reactionType);
 }
 
 /** Remove your reaction from a post. */
 function unlikePost(accessToken, postUrn) {
-  return post.unlikePost(accessToken, postUrn);
+  return reactions.unlikePost(accessToken, postUrn);
 }
 
 module.exports = {

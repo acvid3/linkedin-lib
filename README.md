@@ -25,7 +25,6 @@ const {
   getAccessToken,
   getUserInfo,
   createPost,
-  createPostWithImage,
   deletePost,
 } = require('linkedin-lib');
 ```

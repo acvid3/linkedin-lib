@@ -1,6 +1,6 @@
 # linkedin-lib
 
-LinkedIn Auth & Posting SDK. OAuth2, feed posts, image upload. Supports both personal profiles and company pages.
+LinkedIn Auth & Posting SDK. OAuth2, feed posts, images (single & multi), articles. Uses LinkedIn Posts API (`/rest/posts`).
 
 ## Install
 
@@ -9,8 +9,6 @@ npm i linkedin-lib
 ```
 
 ## Setup
-
-Create a `.env` file:
 
 ```env
 LINKEDIN_CLIENT_ID=your_client_id
@@ -29,57 +27,61 @@ const {
 } = require('linkedin-lib');
 ```
 
-### 1. Authorization URL
+### Authorization
 
 ```js
 const url = getAuthorizationUrl('http://localhost:3456/callback');
 // Open in browser → user authorizes → LinkedIn redirects back with ?code=
 ```
 
-For company page posting, request the `w_organization_social` scope:
+For company page posting, request `w_organization_social` scope:
 
 ```js
 const url = getAuthorizationUrl('http://localhost:3456/callback', 'openid profile email w_organization_social');
 ```
 
-### 2. Exchange code for token
+### Exchange code for token
 
 ```js
 const token = await getAccessToken(code, 'http://localhost:3456/callback');
 ```
 
-### 3. Get user profile
+### Get user profile
 
 ```js
 const user = await getUserInfo(token.access_token);
 const authorUrn = `urn:li:person:${user.sub}`;
 ```
 
-### 4. Create a text post
-
-**On personal profile:**
+### Create a text post
 
 ```js
-const post = await createPost(token.access_token, 'urn:li:person:12345', 'Hello LinkedIn!');
+await createPost(token.access_token, 'urn:li:person:12345', 'Hello LinkedIn!');
 ```
 
-**On company page:**
-
-```js
-const post = await createPost(token.access_token, 'urn:li:organization:67890', 'Hello from our company!');
-```
-
-### 5. Create a post with an image
+### Create a post with one image
 
 ```js
 const fs = require('fs');
-const buffer = fs.readFileSync('./photo.png');
-const post = await createPost(token.access_token, authorUrn, 'My photo', {
-  image: { buffer, mimeType: 'image/png' }
+await createPost(token.access_token, authorUrn, 'My photo', {
+  image: { buffer: fs.readFileSync('./photo.png'), mimeType: 'image/png' }
 });
 ```
 
-### 6. Delete a post
+### Create a post with multiple images (up to 20)
+
+```js
+const fs = require('fs');
+await createPost(token.access_token, authorUrn, 'Gallery', {
+  images: [
+    { buffer: fs.readFileSync('./img1.png'), mimeType: 'image/png' },
+    { buffer: fs.readFileSync('./img2.png'), mimeType: 'image/png' },
+    { buffer: fs.readFileSync('./img3.png'), mimeType: 'image/png' },
+  ]
+});
+```
+
+### Delete a post
 
 ```js
 await deletePost(token.access_token, post.id);
@@ -93,10 +95,10 @@ await deletePost(token.access_token, post.id);
 | `getAccessToken(code, redirectUri)` | Exchange auth code for access token |
 | `refreshAccessToken(refreshToken)` | Refresh an expired access token |
 | `getUserInfo(accessToken)` | Get authenticated user's profile |
-| `createPost(accessToken, authorUrn, commentary, options?)` | Create a post (text, image, or article). Image: `{ image: { buffer, mimeType } }` |
-| `deletePost(accessToken, postIdOrUrn)` | Delete a post by ID or share URN |
+| `createPost(accessToken, authorUrn, commentary, options?)` | Create a post. Options: `image`, `images[]`, `article` |
+| `deletePost(accessToken, postIdOrUrn)` | Delete a post |
 
-The `authorUrn` parameter can be either a person (`urn:li:person:{id}`) or an organization (`urn:li:organization:{id}`). Company page posting requires the `w_organization_social` scope and the appropriate company page role (ADMINISTRATOR, CONTENT_ADMIN, or DIRECT_SPONSORED_CONTENT_POSTER).
+The `authorUrn` can be `urn:li:person:{id}` or `urn:li:organization:{id}`. Company posting requires `w_organization_social` scope and appropriate page role.
 
 ## Tests
 

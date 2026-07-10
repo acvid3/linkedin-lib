@@ -1,6 +1,6 @@
 {
   "name": "linkedin-lib",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "LinkedIn Auth & Posting SDK",
   "main": "src/index.js",
   "scripts": {

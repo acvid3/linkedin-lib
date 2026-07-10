@@ -101,7 +101,7 @@ async function createPost(accessToken, authorUrn, commentary, options = {}) {
   });
 
   const rawId = headers.get('x-restli-id') || data?.id || '';
-  const id = rawId.replace(/^urn:li:share:/, '');
+  const id = rawId.replace(/^urn:li:(share|ugcPost):/, '');
   return { id, urn: `urn:li:share:${id}` };
 }
 

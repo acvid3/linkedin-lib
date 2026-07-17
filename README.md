@@ -108,6 +108,8 @@ await reactToPost(token.access_token, post.urn, 'LIKE');
 
 Requires `w_member_social_feed` scope.
 
+> **Warning:** `w_member_social_feed` is a partner-only scope. Most regular LinkedIn apps cannot request it. Check your app in [LinkedIn Developer Portal](https://www.linkedin.com/developers) to see if this scope is available.
+
 ### Remove reaction
 
 ```js
@@ -134,3 +136,9 @@ The `authorUrn` can be `urn:li:person:{id}` or `urn:li:organization:{id}`. Compa
 ```bash
 npm test
 ```
+
+## Author
+
+**Andrii Chekh**
+
+GitHub: [https://github.com/acvid3](https://github.com/acvid3)

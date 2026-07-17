@@ -1,14 +1,23 @@
 {
   "name": "linkedin-lib",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "LinkedIn Auth & Posting SDK",
   "main": "src/index.js",
   "scripts": {
     "test": "jest --coverage --forceExit",
     "test:watch": "jest --watch"
   },
-  "keywords": ["linkedin", "auth", "api", "sdk"],
+  "keywords": [
+    "linkedin",
+    "auth",
+    "api",
+    "sdk"
+  ],
   "license": "MIT",
+  "author": {
+    "name": "Andrii Chekh",
+    "url": "https://github.com/acvid3"
+  },
   "dependencies": {
     "dotenv": "^16.4.0"
   },
